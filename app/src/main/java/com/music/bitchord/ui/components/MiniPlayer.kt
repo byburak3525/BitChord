@@ -80,10 +80,14 @@ private val SPINNER_SIZE = 22.dp
 private val TRANSPORT_GAP = 8.dp
 
 /**
- * Vertical padding, which with the 40dp artwork sets the bar's height at 56dp
- * and so its pill radius at 28.
+ * Vertical padding. With the 48dp touch targets — the tallest thing in the row
+ * — it sets the bar's height at 60dp and so its pill radius at 30.
+ *
+ * Trimmed from 8 to claw back most of what the 48dp target cost: the bar went
+ * 56 to 64 and read as heavy, and this is the half of that height nothing is
+ * being measured against. The targets keep their 48.
  */
-private val ROW_PADDING_VERTICAL = 8.dp
+private val ROW_PADDING_VERTICAL = 6.dp
 
 /**
  * Horizontal padding, larger than the vertical.
@@ -92,13 +96,13 @@ private val ROW_PADDING_VERTICAL = 8.dp
  * beside it but the one curving away above and below it. Padding the ends by
  * the vertical figure would leave the artwork touching that curve.
  *
- * 12 survived the bar growing to 64dp without being recomputed, which is worth
- * saying because it looks like it should not have. The radius went up to 32,
- * which pushes the curve further in — but the 40dp artwork is now centred in a
- * 48dp row, so it starts 12dp down instead of 8, and at that depth the curve
- * has already fallen back to 7dp from the edge. Five clear, where it was three.
+ * 16 rather than the 12 it was: the artwork sat closer to the left curve than
+ * it wanted to. There is room for it — the 40dp artwork is centred in a 48dp
+ * row now, so it starts 10dp down, and at that depth a 30dp radius has already
+ * fallen back to 7.6dp from the edge. Both ends take it, so the skip glyph
+ * clears the right curve by the same margin.
  */
-private val ROW_PADDING_HORIZONTAL = 12.dp
+private val ROW_PADDING_HORIZONTAL = 16.dp
 
 /**
  * The artwork's corner, on the 8dp every other thumbnail in the app carries.

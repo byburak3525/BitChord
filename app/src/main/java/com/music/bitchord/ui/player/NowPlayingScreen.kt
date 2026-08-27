@@ -144,7 +144,6 @@ import androidx.media3.common.Player
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
-import com.music.bitchord.ui.components.ArtworkTopBlur
 import com.music.bitchord.ui.rememberIsForeground
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.icons.BitChordIcons
@@ -711,16 +710,6 @@ fun NowPlayingScreen(
     // is nothing to show that early either.
     var heroHeight by remember { mutableStateOf(0.dp) }
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    /**
-     * The banner's own height, once the status bar has been left to itself.
-     *
-     * [heroHeight] is where the bottom edge sits, measured from the top of the
-     * screen; the banner now starts below the inset rather than at zero, so the
-     * span between the two is what it actually gets. The sleeve it cross-fades
-     * with has always sat below the inset — the banner running under it was the
-     * odd one out, and it put the top of every cover behind the clock.
-     */
-    val heroSpan = (heroHeight - statusBarTop).coerceAtLeast(0.dp)
 
     Box(modifier = modifier.fillMaxSize()) {
         // Keyed on the track: the backdrop drifts when the player opens and on
@@ -772,8 +761,7 @@ fun NowPlayingScreen(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .fillMaxWidth()
-                        .padding(top = statusBarTop)
-                        .height(heroSpan)
+                        .height(heroHeight)
                         .graphicsLayer {
                             // Hands its opacity to the clip as the clip takes
                             // over, and takes it straight back if there is no
@@ -815,29 +803,9 @@ fun NowPlayingScreen(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .fillMaxWidth()
-                            .padding(top = statusBarTop)
-                            .height(heroSpan),
+                            .height(heroHeight),
                     )
                 }
-            }
-
-            // The strip behind the status bar — see [ArtworkTopBlur].
-            //
-            // Tied to [heroVisible] alone rather than the still/clip handover
-            // below. A clip and its cover share a top edge closely enough at
-            // this scale, and a strip that blinked during the handover would be
-            // more noticeable than the difference it was tracking.
-            if (heroMode && heroVisible > 0.001f) {
-                ArtworkTopBlur(
-                    model = ImageRequest.Builder(context)
-                        .data(song.artworkAt(ART_PX))
-                        .size(ART_PX)
-                        .build(),
-                    height = statusBarTop,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .graphicsLayer { alpha = heroVisible },
-                )
             }
 
             // The clock, the signal bars and the drag handle are all white, and
