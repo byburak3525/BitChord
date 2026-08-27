@@ -47,6 +47,7 @@ import com.music.bitchord.ui.rememberIsForeground
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.music.bitchord.data.Http
 import com.music.bitchord.data.canvas.CanvasArtwork
+import java.util.Locale
 
 /**
  * The looping video that plays over a track's cover art, sized to fill and
@@ -373,7 +374,7 @@ private class FadingBottomFrame(context: Context) : FrameLayout(context) {
  * saves ExoPlayer a sniff, and an unrecognised URL is left for it to work out.
  */
 private fun mimeTypeOf(url: String): String? {
-    val path = url.substringBefore('?').lowercase()
+    val path = url.substringBefore('?').lowercase(Locale.ROOT)
     return when {
         path.endsWith(".m3u8") -> MimeTypes.APPLICATION_M3U8
         path.endsWith(".mp4") -> MimeTypes.VIDEO_MP4

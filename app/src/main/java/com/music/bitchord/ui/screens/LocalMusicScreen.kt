@@ -64,6 +64,7 @@ import com.music.bitchord.ui.components.MessageState
 import com.music.bitchord.ui.components.PAGE_GUTTER
 import com.music.bitchord.ui.components.ROW_DIVIDER_INSET
 import com.music.bitchord.ui.components.SongRow
+import java.util.Locale
 
 private const val LOCAL_TAB_SONGS = 0
 private const val LOCAL_TAB_ARTISTS = 1
@@ -224,7 +225,7 @@ fun LocalMusicScreen(
                     val artists = remember(songs) {
                         songs.groupBy { it.artist }
                             .entries
-                            .sortedBy { it.key.lowercase() }
+                            .sortedBy { it.key.lowercase(Locale.ROOT) }
                     }
                     ArtistsTab(
                         artists = artists,
@@ -242,7 +243,7 @@ fun LocalMusicScreen(
                         songs.filter { it.albumName != null }
                             .groupBy { it.albumName!! }
                             .entries
-                            .sortedBy { it.key.lowercase() }
+                            .sortedBy { it.key.lowercase(Locale.ROOT) }
                     }
                     AlbumsTab(
                         albums = albums,

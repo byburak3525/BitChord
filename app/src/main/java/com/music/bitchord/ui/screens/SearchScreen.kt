@@ -63,6 +63,7 @@ import com.music.bitchord.ui.components.ROW_DIVIDER_INSET
 import com.music.bitchord.ui.components.SongRow
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.components.songListSkeleton
+import java.util.Locale
 
 @Composable
 fun SearchScreen(
@@ -373,7 +374,7 @@ private fun BrowseRow(item: BrowseItem, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = item.subtitle.ifBlank { item.type.name.lowercase().replaceFirstChar { it.uppercase() } },
+                text = item.subtitle.ifBlank { item.type.name.lowercase(Locale.ROOT).replaceFirstChar { it.uppercase(Locale.ROOT) } },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

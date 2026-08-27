@@ -3033,7 +3033,7 @@ private fun codecLabel(mimeType: String?): String? = when {
     mimeType.endsWith("mpeg") -> "MP3"
     mimeType.endsWith("flac") -> "FLAC"
     mimeType.endsWith("alac") -> "ALAC"
-    else -> mimeType.substringAfter('/').uppercase()
+    else -> mimeType.substringAfter('/').uppercase(Locale.ROOT)
 }
 
 /** Wording for the stats line; see [TrackAnalysisState]. */

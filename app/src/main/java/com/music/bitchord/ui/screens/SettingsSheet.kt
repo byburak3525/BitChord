@@ -915,7 +915,7 @@ private fun QualitySheet(
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = "While on ${target.title.lowercase()}",
+                    text = "While on ${target.title.lowercase(Locale.ROOT)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -985,7 +985,7 @@ internal fun SettingsGroup(
 ) {
     if (header != null) {
         Text(
-            text = header.uppercase(),
+            text = header.uppercase(Locale.ROOT),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(
@@ -1109,7 +1109,7 @@ internal fun SettingsRow(
 @Composable
 internal fun Badge(text: String) {
     Text(
-        text = text.uppercase(),
+        text = text.uppercase(Locale.ROOT),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier

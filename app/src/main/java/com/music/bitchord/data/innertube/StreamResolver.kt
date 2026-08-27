@@ -37,6 +37,7 @@ import java.io.IOException
 import java.net.URLDecoder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.Locale
 
 /**
  * Turns a videoId into a URL ExoPlayer can actually stream.
@@ -782,7 +783,7 @@ object StreamResolver {
          * type names is enough to tell the two ladders apart, and the container
          * is the thing a download actually cares about.
          */
-        val isAac: Boolean get() = "mp4" in mimeType.lowercase()
+        val isAac: Boolean get() = "mp4" in mimeType.lowercase(Locale.ROOT)
     }
 
     private fun audioFormats(response: JsonObject): List<Audio> =
