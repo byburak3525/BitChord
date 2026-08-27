@@ -42,19 +42,23 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
- * The transport buttons' touch target. Material's default 48dp is what a bar
- * this slim is really made of, so it sets the height on its own.
+ * The transport buttons' touch target, and with it the row's height.
+ *
+ * 48dp because that is the floor Material puts under a touch target and Apple
+ * puts at 44pt — it was 40, which is under both. It is the tallest thing in the
+ * row, so honouring the floor is what takes the bar from 56dp to 64dp. That is
+ * the trade and it is the right way round: a bar is a place to hit a control
+ * from a pocket, and eight points of height is a cheaper thing to spend than a
+ * missed skip.
  */
-private val GLYPH_SLOT = 40.dp
+private val GLYPH_SLOT = 48.dp
 
 /**
  * The play and skip glyphs themselves.
  *
- * Deliberately grown inside [GLYPH_SLOT] rather than by growing the slot: the
- * slot is level with the 40dp artwork opposite it, and it is the taller of the
- * two that sets the row's height — so a bigger slot would make the whole bar
- * taller, which is not what a bigger glyph is being asked for. At 32 there is
- * still 4dp of clearance to the slot's edge on every side.
+ * Left at 32 while the slot around it grew to 48, so the glyph keeps its weight
+ * and the extra 8dp goes where it was wanted — into the margin a thumb lands
+ * in rather than into the mark it aims at.
  */
 private val GLYPH_SIZE = 32.dp
 
@@ -82,14 +86,17 @@ private val TRANSPORT_GAP = 8.dp
 private val ROW_PADDING_VERTICAL = 8.dp
 
 /**
- * Horizontal padding, deliberately larger than the vertical.
+ * Horizontal padding, larger than the vertical.
  *
- * A pill's ends are semicircles, so the edge nearest the artwork is not the
- * one beside it but the one curving away above and below it. At the artwork's
- * top corner that edge has already come 8.4dp in from the left — level with
- * where square corners would have put the whole side. Padding the ends by the
- * vertical figure would leave the artwork touching the curve; 12 clears it
- * with room, and reads as centred rather than jammed into the round.
+ * A pill's ends are semicircles, so the edge nearest the artwork is not the one
+ * beside it but the one curving away above and below it. Padding the ends by
+ * the vertical figure would leave the artwork touching that curve.
+ *
+ * 12 survived the bar growing to 64dp without being recomputed, which is worth
+ * saying because it looks like it should not have. The radius went up to 32,
+ * which pushes the curve further in — but the 40dp artwork is now centred in a
+ * 48dp row, so it starts 12dp down instead of 8, and at that depth the curve
+ * has already fallen back to 7dp from the edge. Five clear, where it was three.
  */
 private val ROW_PADDING_HORIZONTAL = 12.dp
 

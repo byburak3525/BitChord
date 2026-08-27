@@ -27,11 +27,11 @@ import androidx.compose.ui.unit.dp
 private val FADE_HEIGHT = 180.dp
 
 /**
- * Taller once the mini player is stacked on top of the tab bar — by the 56dp
- * the pill-shaped bar now stands, plus the 8dp gap above it and the run the
- * ramp wants over both.
+ * Taller once the mini player is stacked on top of the tab bar — by the 64dp
+ * the pill-shaped bar stands once its controls carry a 48dp touch target, plus
+ * the 8dp gap above it and the run the ramp wants over both.
  */
-private val FADE_HEIGHT_WITH_MINI_PLAYER = 254.dp
+private val FADE_HEIGHT_WITH_MINI_PLAYER = 262.dp
 
 /**
  * How many colour stops the ramp is cut into.
