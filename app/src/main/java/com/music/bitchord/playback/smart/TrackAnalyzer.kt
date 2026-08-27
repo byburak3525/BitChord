@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
+import java.util.Locale
 
 /**
  * Produces [TrackAnalysis] for tracks that are about to be mixed, and hands it
@@ -504,7 +505,7 @@ class TrackAnalyzer(context: Context, private val cache: AudioCache) {
                 Log.d(
                     TAG,
                     "Head rendition ${rendition.key} rejected for $trackId: " +
-                        "${"%.1f".format(length)}s against ${"%.1f".format(expected)}s expected",
+                        "${"%.1f".format(Locale.ROOT, length)}s against ${"%.1f".format(Locale.ROOT, expected)}s expected",
                 )
                 badRenditions.add(rendition.key)
                 return null
@@ -523,7 +524,7 @@ class TrackAnalyzer(context: Context, private val cache: AudioCache) {
         // one, and the planner cannot see the difference — so it is refused here
         // and the next attempt gets more of the file.
         if (head.seconds < MIN_HEAD_SECONDS) {
-            Log.d(TAG, "Head pass for $trackId decoded only ${"%.1f".format(head.seconds)}s; too short")
+            Log.d(TAG, "Head pass for $trackId decoded only ${"%.1f".format(Locale.ROOT, head.seconds)}s; too short")
             return null
         }
         val grid = head.grid
@@ -539,7 +540,7 @@ class TrackAnalyzer(context: Context, private val cache: AudioCache) {
                 "conf=${grid?.beatConfidence ?: entry?.beatConfidence} " +
                 "audibleStart=${entry?.audibleStartTime} pickup=${entry?.pickupTime} " +
                 "introEnd=${entry?.introEndTime} mixInCandidates=${entry?.mixInCandidates?.size ?: 0} " +
-                "over ${"%.1f".format(head.seconds)}s",
+                "over ${"%.1f".format(Locale.ROOT, head.seconds)}s",
         )
 
         return TrackAnalysis(
@@ -625,7 +626,7 @@ class TrackAnalyzer(context: Context, private val cache: AudioCache) {
                 Log.d(
                     TAG,
                     "Rendition ${candidate.key} rejected for $trackId: " +
-                        "${"%.1f".format(length)}s against ${"%.1f".format(expected)}s expected",
+                        "${"%.1f".format(Locale.ROOT, length)}s against ${"%.1f".format(Locale.ROOT, expected)}s expected",
                 )
                 continue
             }
@@ -698,7 +699,7 @@ class TrackAnalyzer(context: Context, private val cache: AudioCache) {
             Log.w(
                 TAG,
                 "Analysis of $trackId refused: rendition ${rendition.key} decoded " +
-                    "${"%.1f".format(decodedSeconds)}s of a ${"%.1f".format(effectiveDuration)}s " +
+                    "${"%.1f".format(Locale.ROOT, decodedSeconds)}s of a ${"%.1f".format(Locale.ROOT, effectiveDuration)}s " +
                     "container — cached with holes?",
             )
             // Remembered, so the retry reaches for a *different* rendition. This

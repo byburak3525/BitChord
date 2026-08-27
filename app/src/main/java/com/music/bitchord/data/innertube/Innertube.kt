@@ -39,6 +39,7 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import java.io.IOException
 import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * Minimal Innertube (youtubei) client.
@@ -720,7 +721,7 @@ object Innertube {
         val timestamp = System.currentTimeMillis() / 1000
         val digest = MessageDigest.getInstance("SHA-1")
             .digest("$timestamp $sapisid $origin".toByteArray())
-            .joinToString("") { "%02x".format(it) }
+            .joinToString("") { "%02x".format(Locale.ROOT, it) }
         return "SAPISIDHASH ${timestamp}_$digest"
     }
 }

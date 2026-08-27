@@ -107,6 +107,7 @@ import com.music.bitchord.playback.DolbyAtmos
 import com.music.bitchord.ui.player.fullBleedArtworkAvailable
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import java.util.Locale
 
 /**
  * Grouped settings, in the shape phones have taught people to expect: inset
@@ -819,7 +820,7 @@ private const val CACHE_WARNING_MB = 2048
 private fun formatCacheSize(mb: Int): String {
     if (mb < 1024) return "$mb MB"
     val gb = mb / 1024f
-    return if (gb == gb.toInt().toFloat()) "${gb.toInt()} GB" else "%.1f GB".format(gb)
+    return if (gb == gb.toInt().toFloat()) "${gb.toInt()} GB" else "%.1f GB".format(Locale.ROOT, gb)
 }
 
 /** Who you're signed in as, straight from YouTube Music's account menu. */
