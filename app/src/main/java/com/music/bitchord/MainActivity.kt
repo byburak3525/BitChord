@@ -38,6 +38,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -125,6 +126,7 @@ import com.music.bitchord.data.YtMusicRepository
 import com.music.bitchord.ui.player.NowPlayingScreen
 import com.music.bitchord.ui.screens.DetailScreen
 import com.music.bitchord.ui.screens.LocalMusicScreen
+import com.music.bitchord.ui.screens.HistoryScreen
 import com.music.bitchord.ui.screens.HomeScreen
 import com.music.bitchord.ui.screens.LibraryScreen
 import com.music.bitchord.ui.screens.SearchScreen
@@ -167,6 +169,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
     var showLogin by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var showAccountScrobbling by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
     var showLyricsSources by remember { mutableStateOf(false) }
     var showListenBrainzLogin by remember { mutableStateOf(false) }
     var showLastfmLogin by remember { mutableStateOf(false) }
@@ -200,6 +203,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
     // it keeps light glyphs; every other surface follows the theme.
     SystemBarIcons(dark = !darkTheme && !showNowPlaying)
 
+    val historyState by viewModel.history.collectAsStateWithLifecycle()
     val homeState by viewModel.home.collectAsStateWithLifecycle()
     val homeLoadingMore by viewModel.homeLoadingMore.collectAsStateWithLifecycle()
 
@@ -320,6 +324,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
         }
     }
 
+    val historyListState = rememberLazyListState()
     val homeListState = rememberLazyListState()
     val exploreListState = rememberLazyListState()
     val libraryListState = rememberLazyListState()
@@ -602,6 +607,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
         // One back step out of Settings, or out of any tab but Home, lands on
         // Home rather than exiting — only Home itself hands back to the system,
         // which is what actually closes/minimizes the app.
+        BackHandler(enabled = showHistory) { showHistory = false }
         BackHandler(enabled = showSettings && !showAccountScrobbling) {
             showSettings = false
             if (detail == null) selectedTab = TAB_HOME
@@ -617,6 +623,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
         AnimatedContent(
             targetState = when {
                 showDiscord -> "discord"
+                showHistory -> "history"
                 showAccountScrobbling -> "account_scrobbling"
                 showSettings -> "settings"
                 detail != null -> detail.browseId
@@ -629,7 +636,17 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
             val page = detailStack.lastOrNull()?.takeIf {
                 it.browseId == key && key != "settings" && key != "account_scrobbling" && key != "discord"
             }
-            if (key == "discord") {
+            if (key == "history") {
+                HistoryScreen(
+                    state = historyState,
+                    listState = historyListState,
+                    onSongClick = play,
+                    onSongLongPress = { songActions = it },
+                    onSongSwipe = onSongSwipe,
+                    onRetry = viewModel::loadHistory,
+                    contentPadding = listPadding,
+                )
+            } else if (key == "discord") {
                 DiscordScreen(
                     song = player.song,
                     positionMs = player.position.positionMs,
@@ -904,6 +921,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
         FrostedTopBar(
             title = when {
                 showDiscord -> "Discord"
+                showHistory -> "History"
                 showAccountScrobbling -> "Account & scrobbling"
                 showSettings -> "Settings"
                 detail != null -> detail.title
@@ -914,7 +932,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
             // Search has no large in-list header to hand the title back to —
             // the field takes that space — so its bar title is always up.
             scrolled = when {
-                showSettings || showAccountScrobbling || showDiscord -> true
+                showSettings || showAccountScrobbling || showDiscord || showHistory -> true
                 detail != null -> detailScrolled
                 else -> scrolled || selectedTab == TAB_SEARCH
             },
@@ -922,6 +940,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
             pullFraction = { currentPull?.distanceFraction ?: 0f },
             onBack = when {
                 showDiscord -> ({ showDiscord = false })
+                showHistory -> ({ showHistory = false })
                 showAccountScrobbling -> ({ showAccountScrobbling = false })
                 showSettings -> ({ showSettings = false })
                 detail != null -> ({ viewModel.closeDetail(); Unit })
@@ -945,6 +964,24 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
                     }
                 }
                 if (!showSettings && !showAccountScrobbling) {
+                    // Left of the account photo, and only where the account is
+                    // also offered: both are about *this listener* rather than
+                    // about the page, and a history is the one thing you reach
+                    // for as often as the settings behind the avatar.
+                    if (!showHistory) {
+                        IconButton(
+                            onClick = {
+                                showHistory = true
+                                viewModel.loadHistory()
+                            },
+                        ) {
+                            Icon(
+                                Icons.Rounded.History,
+                                contentDescription = "Listening history",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
                     TopBarAccountButton(
                         account = account,
                         onClick = { showSettings = true },

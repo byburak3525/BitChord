@@ -107,6 +107,25 @@ object YtMusicRepository {
         )
     }
 
+    /**
+     * The account's listening history, in the order YouTube Music keeps it.
+     *
+     * The same feed [recentlyPlayed] reads, without the truncation: that one is
+     * a shelf on the home page and stops at [RECENT_LIMIT] so it stays a shelf,
+     * whereas this is the page you open when twenty is not enough.
+     *
+     * Deduplicated the same way and for the same reason — the feed carries one
+     * entry per play, so an album on repeat comes back as the same track over
+     * and over. What that costs is the times: this is "what you have been
+     * listening to", not a log. A log would want the repeats and the stamps
+     * that tell them apart, and YouTube's own page groups them under Today and
+     * Yesterday headings that the shelf parser does not carry through.
+     */
+    suspend fun history(): Result<List<Song>> = call("history") {
+        InnertubeParser.collectSongsDeep(Innertube.browse(HISTORY))
+            .distinctBy { it.videoId }
+    }
+
     private const val HISTORY = "FEmusic_history"
     private const val RECENT_TITLE = "Recently played"
 
