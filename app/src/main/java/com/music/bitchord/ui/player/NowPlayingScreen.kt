@@ -1316,15 +1316,23 @@ fun NowPlayingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
             // Current lyric, one line, directly above the scrubber. It stays in
-            // the layout while the queue is open and only fades — dropping it
-            // would shorten this block, and the controls under it would jump
-            // the moment the queue started sliding in.
+            // the layout whenever the header is collapsing and only fades —
+            // dropping it would shorten this block, and the artwork above takes
+            // whatever height this block leaves.
+            //
+            // That was true of the queue and had to be made true of the lyrics.
+            // Opening them dropped this outright on the frame `lyricsOpen`
+            // flipped, which handed the artwork some 20dp it did not have a
+            // moment earlier: the sleeve grew, at full size, before it had begun
+            // to collapse. Coming back it did the reverse while the sleeve was a
+            // thumbnail, where nobody could see it — which is exactly why the
+            // way out looked right and the way in did not.
             //
             // Switched off in Settings it goes entirely, rather than sitting
             // there saying no lyrics were found: none were looked for. It is
             // also the only way into the full lyrics panel, so with it gone
             // the feature is properly gone.
-            if (!lyricsOpen && syncedLyricsEnabled) {
+            if (syncedLyricsEnabled) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1333,7 +1341,10 @@ fun NowPlayingScreen(
                         // it is. Nudged down into that dead space, the same way
                         // the timestamps below are pulled back up into it.
                         .offset(y = 6.dp)
-                        .graphicsLayer { alpha = 1f - queueProgress },
+                        // [p] rather than the queue's own progress: it is the
+                        // collapse either surface asks for, so one fade covers
+                        // both.
+                        .graphicsLayer { alpha = 1f - p },
                 ) {
                     if (!lyrics.isNullOrEmpty()) {
                         CurrentLyricLine(
@@ -1342,9 +1353,11 @@ fun NowPlayingScreen(
                             positionMs = positionMs,
                             isPlaying = isPlaying,
                             durationMs = durationMs,
-                            // Faded out behind the queue, so it must not still
-                            // be a target for a tap meant for the list.
-                            onClick = { if (!queueOpen) lyricsOpen = true },
+                            // Faded out behind either surface, so it must not
+                            // still be a target for a tap meant for the list —
+                            // or, now that it outlives the panel it opens, for
+                            // one meant for the lyrics themselves.
+                            onClick = { if (!queueOpen && !lyricsOpen) lyricsOpen = true },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     } else if (lyricsUnavailable) {
