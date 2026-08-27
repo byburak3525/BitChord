@@ -24,14 +24,14 @@ import androidx.compose.ui.unit.dp
  * purpose: the ramp below spends most of its run at an alpha too low to see,
  * and that long invisible lead-in is what hides where the layer begins.
  */
-private val FADE_HEIGHT = 180.dp
+private val FADE_HEIGHT = 176.dp
 
 /**
  * Taller once the mini player is stacked on top of the tab bar — by the 60dp
- * the pill-shaped bar stands, plus the 8dp gap above it and the run the ramp
- * wants over both.
+ * the mini player stands, plus the 8dp gap above it and the run the ramp wants
+ * over both. Both figures came down by 4 when the tab bar did.
  */
-private val FADE_HEIGHT_WITH_MINI_PLAYER = 258.dp
+private val FADE_HEIGHT_WITH_MINI_PLAYER = 254.dp
 
 /**
  * How many colour stops the ramp is cut into.

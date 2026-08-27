@@ -71,16 +71,16 @@ data class BottomTab(
 private val PILL_INSET = 6.dp
 
 /**
- * Each tab's own vertical padding, and the counterweight to [PILL_INSET].
+ * Each tab's own vertical padding, and where the bar's height actually lives.
  *
  * The pill has no height of its own — it is whatever its contents come to — so
- * taking 2dp off the inset above would have shortened the whole bar by 4. The
- * same 2dp is added back here instead, which leaves the bar's outer height
- * exactly where it was and moves the boundary rather than the bar. The two
- * numbers are a pair: change one and the bar's height moves unless the other
- * moves against it.
+ * this and [PILL_INSET] are a pair: four times their sum, plus the icon, the
+ * gap and the label, is the bar. It was briefly 9, holding the height still
+ * while the inset came down to move the selection indicator outward; back at 7
+ * that borrowed height is given up and the bar comes in by 4dp, which is what
+ * was wanted the second time round.
  */
-private val TAB_VERTICAL_PADDING = 9.dp
+private val TAB_VERTICAL_PADDING = 7.dp
 
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
