@@ -85,7 +85,7 @@ import com.music.bitchord.ui.components.PAGE_GUTTER
 import com.music.bitchord.ui.components.ROW_DIVIDER_INSET
 import com.music.bitchord.ui.components.SHELF_CARD_WIDTH
 import com.music.bitchord.ui.components.SongRow
-import com.music.bitchord.ui.components.ArtworkEdgeExtension
+import com.music.bitchord.ui.components.ArtworkTopBlur
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.components.detailSkeleton
 import com.music.bitchord.ui.icons.BitChordIcons
@@ -658,10 +658,10 @@ private fun PageBackground(
             )
         }
 
-        // Drawn after the picture, not before it: the last stretch of this is
-        // a crossfade onto that picture — see [ArtworkEdgeExtension]. Offset by
+        // Drawn after the picture, not before it: the last of this is a
+        // crossfade onto that picture — see [ArtworkTopBlur]. Offset by
         // the list's scroll alone, where the picture adds [artTop] to it.
-        ArtworkEdgeExtension(
+        ArtworkTopBlur(
             model = page.thumbnailUrl.artworkAt(HEADER_ART_PX),
             height = artTop,
             modifier = Modifier.offset {

@@ -144,7 +144,7 @@ import androidx.media3.common.Player
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
-import com.music.bitchord.ui.components.ArtworkEdgeExtension
+import com.music.bitchord.ui.components.ArtworkTopBlur
 import com.music.bitchord.ui.rememberIsForeground
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.icons.BitChordIcons
@@ -166,6 +166,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import java.util.Locale
 
 /** Collapsed-header geometry, shared by the layout and its animation. */
 /** Comfortably over the sleeve's drawn size on a phone, without wasting bytes. */
@@ -798,14 +799,14 @@ fun NowPlayingScreen(
                 }
             }
 
-            // The strip behind the status bar — see [ArtworkEdgeExtension].
+            // The strip behind the status bar — see [ArtworkTopBlur].
             //
             // Tied to [heroT] alone rather than to the still/clip handover
             // below. A clip and its cover share a top edge closely enough at
             // this scale, and a strip that blinked during the handover would be
             // more noticeable than the difference it was tracking.
             if (heroMode && heroT > 0.001f) {
-                ArtworkEdgeExtension(
+                ArtworkTopBlur(
                     model = ImageRequest.Builder(context)
                         .data(song.artworkAt(ART_PX))
                         .size(ART_PX)
@@ -2856,7 +2857,7 @@ private fun formatTime(ms: Long): String {
     if (ms <= 0) return "0:00"
     val minutes = TimeUnit.MILLISECONDS.toMinutes(ms)
     val seconds = TimeUnit.MILLISECONDS.toSeconds(ms) % 60
-    return "%d:%02d".format(minutes, seconds)
+    return "%d:%02d".format(Locale.ROOT, minutes, seconds)
 }
 
 /**
@@ -3008,7 +3009,7 @@ private fun NerdStats.Snapshot.describe(): String? {
         codecLabel(mimeType)?.let(::add)
         bitDepth?.let { add("$it-bit") }
         if (!isLossless) bitrateKbps?.let { add("$it kbps") }
-        sampleRateHz?.let { add("%.1f kHz".format(it / 1000f)) }
+        sampleRateHz?.let { add("%.1f kHz".format(Locale.ROOT, it / 1000f)) }
         channels?.let {
             add(
                 when (it) {
