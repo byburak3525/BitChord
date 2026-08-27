@@ -108,7 +108,7 @@ import com.music.bitchord.ui.components.SongActionsSheet
 import com.music.bitchord.playback.rememberMediaController
 import com.music.bitchord.playback.rememberPlayerState
 import com.music.bitchord.ui.MainViewModel
-import com.music.bitchord.ui.components.BottomFadeBlur
+import com.music.bitchord.ui.components.BottomFadeScrim
 import com.music.bitchord.ui.components.BottomTab
 import com.music.bitchord.ui.components.FloatingBottomBar
 import com.music.bitchord.ui.components.FrostedTopBar
@@ -570,7 +570,11 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
     // Content padding leaves room for the frosted bar above and the tab bar
     // (plus mini player) below, so nothing is ever trapped under the glass.
     val listPadding = PaddingValues(
-        top = 96.dp,
+        // Far enough down that the first heading clears the tail of the header
+        // fade rather than resting in it — see FADE_RUN on [TopFadeBlur], which
+        // was shortened by the same amount of this problem it could take
+        // without the ramp becoming visible.
+        top = 108.dp,
         bottom = if (player.song != null) 210.dp else 140.dp,
     )
 
@@ -628,7 +632,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
             if (key == "discord") {
                 DiscordScreen(
                     song = player.song,
-                    positionMs = player.positionMs,
+                    positionMs = player.position.positionMs,
                     durationMs = player.durationMs,
                     onOpenLogin = { showDiscordLogin = true },
                     onOpenDialog = { discordDialog = it },
@@ -876,17 +880,26 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
             }
         }
 
-        // A detail page's artwork runs up under the status bar, so the bar
-        // there is a fade rather than a pane — see [TopFadeBlur]. Drawn before
-        // the bar so the bar's own content sits on top of it.
+        // Every bar is a fade rather than a pane — see [TopFadeBlur]. Drawn
+        // before the bar so the bar's own content sits on top of it.
         val isDetailVisible = detail != null && !isLocalDetail && !showSettings && !showAccountScrobbling
-        if (isDetailVisible) {
-            TopFadeBlur(
-                hazeState = hazeState,
-                pageColor = detailPalette.wash,
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
-        }
+        TopFadeBlur(
+            hazeState = hazeState,
+            // A detail page is washed in its artwork's colour; everywhere else
+            // the page under the fade is the theme's own background.
+            pageColor = if (isDetailVisible) detailPalette.wash else MaterialTheme.colorScheme.background,
+            // The readability wash, on every header rather than only the ones
+            // over artwork: a feed's rows are album covers too, and a bright
+            // one scrolling under the title blurs to a bright smear just as a
+            // pale sleeve does.
+            //
+            // `background` rather than `wash` — it is the deeper of the two, and
+            // a scrim wants the ground the glyphs were chosen for, not the tint
+            // the artwork bleeds into. Off a detail page it resolves to the
+            // theme's own background, which is exactly right there.
+            scrimColor = if (isDetailVisible) detailPalette.background else MaterialTheme.colorScheme.background,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
 
         FrostedTopBar(
             title = when {
@@ -898,8 +911,6 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
                     if (it.label == "Play") "Listen Now" else it.label
                 }
             },
-            hazeState = hazeState,
-            ownBackdrop = detail == null || isLocalDetail,
             // Search has no large in-list header to hand the title back to —
             // the field takes that space — so its bar title is always up.
             scrolled = when {
@@ -942,10 +953,9 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
             },
         )
 
-        // Drawn before the bars so their own glass reads on top of it; both
-        // sample the same source content, so nothing is blurred twice.
-        BottomFadeBlur(
-            hazeState = hazeState,
+        // Drawn before the bars so their glass reads on top of it, and samples
+        // nothing itself — see [BottomFadeScrim].
+        BottomFadeScrim(
             withMiniPlayer = player.song != null,
             // Not the wash: by the foot of the screen the page has finished
             // easing out of it and into this, so this is what is actually
@@ -1043,7 +1053,7 @@ private fun BitChordApp(darkTheme: Boolean, viewModel: MainViewModel = viewModel
                     song = song,
                     isPlaying = player.isPlaying,
                     isLoading = player.isLoading,
-                    positionMs = player.positionMs,
+                    positionMs = player.position.positionMs,
                     durationMs = player.durationMs,
                     onPlayPause = {
                         controller?.let { if (it.isPlaying) it.pause() else it.play() }

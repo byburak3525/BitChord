@@ -24,7 +24,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.verticalDrag
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -101,6 +104,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -116,6 +120,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -127,6 +134,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.Velocity
@@ -136,6 +144,8 @@ import androidx.media3.common.Player
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
+import com.music.bitchord.ui.components.ArtworkEdgeExtension
+import com.music.bitchord.ui.rememberIsForeground
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.icons.BitChordIcons
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -199,6 +209,7 @@ private val ART_BOX_TOP_PAD = 14.dp
  * that was cut off rather than one that ran out.
  */
 private const val HERO_FADE_FRACTION = 0.42f
+
 /** The player's side margin. Scrollable panels reach back across it. */
 private val PLAYER_GUTTER = 30.dp
 /**
@@ -617,7 +628,19 @@ fun NowPlayingScreen(
     // Both states collapse the header, but the banner only ever shows over a
     // settled player: opening the queue or the lyrics hands the sleeve back its
     // card first.
-    val p = if (lyricsOpen) 1f else queueProgress
+    // How collapsed the sleeve is, whichever surface asked for it.
+    //
+    // This used to read `if (lyricsOpen) 1f else queueProgress`, which gave the
+    // queue a 420ms ease and the lyrics nothing at all: opening them snapped
+    // the sleeve to a thumbnail in a single frame while [heroT] — reading off
+    // this same value — went on fading the banner out over the full 420. One
+    // half of the artwork jumped, the other half glided after it, and the pair
+    // read as a stutter rather than as either. One animation, both surfaces.
+    val p by animateFloatAsState(
+        targetValue = if (lyricsOpen || queueOpen) 1f else 0f,
+        animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
+        label = "sleeveCollapse",
+    )
     val fullBleedArt by AppSettings.fullBleedArtwork.collectAsStateWithLifecycle()
     // Full-bleed is a phone idiom. Past the width the player is willing to grow
     // to, edge to edge stops meaning "the artwork *is* the screen" and starts
@@ -665,6 +688,16 @@ fun NowPlayingScreen(
     // is nothing to show that early either.
     var heroHeight by remember { mutableStateOf(0.dp) }
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    /**
+     * The banner's own height, once the status bar has been left to itself.
+     *
+     * [heroHeight] is where the bottom edge sits, measured from the top of the
+     * screen; the banner now starts below the inset rather than at zero, so the
+     * span between the two is what it actually gets. The sleeve it cross-fades
+     * with has always sat below the inset — the banner running under it was the
+     * odd one out, and it put the top of every cover behind the clock.
+     */
+    val heroSpan = (heroHeight - statusBarTop).coerceAtLeast(0.dp)
 
     Box(modifier = modifier.fillMaxSize()) {
         // Keyed on the track: the backdrop drifts when the player opens and on
@@ -716,7 +749,8 @@ fun NowPlayingScreen(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .fillMaxWidth()
-                        .height(heroHeight)
+                        .padding(top = statusBarTop)
+                        .height(heroSpan)
                         .graphicsLayer {
                             // Hands its opacity to the clip as the clip takes
                             // over, and takes it straight back if there is no
@@ -758,9 +792,29 @@ fun NowPlayingScreen(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .fillMaxWidth()
-                            .height(heroHeight),
+                            .padding(top = statusBarTop)
+                            .height(heroSpan),
                     )
                 }
+            }
+
+            // The strip behind the status bar — see [ArtworkEdgeExtension].
+            //
+            // Tied to [heroT] alone rather than to the still/clip handover
+            // below. A clip and its cover share a top edge closely enough at
+            // this scale, and a strip that blinked during the handover would be
+            // more noticeable than the difference it was tracking.
+            if (heroMode && heroT > 0.001f) {
+                ArtworkEdgeExtension(
+                    model = ImageRequest.Builder(context)
+                        .data(song.artworkAt(ART_PX))
+                        .size(ART_PX)
+                        .build(),
+                    height = statusBarTop,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .graphicsLayer { alpha = heroT },
+                )
             }
 
             // The clock, the signal bars and the drag handle are all white, and
@@ -785,6 +839,17 @@ fun NowPlayingScreen(
                 )
             }
         }
+
+        // Where the sleeve is, in root coordinates, and where the strip that
+        // swallows drags starts — the two are compared to decide whether a
+        // given gesture began on the artwork. Measured rather than derived from
+        // the layout maths above, which is spread over a dozen lerps and would
+        // have to be kept in step by hand.
+        var sleeveBounds by remember { mutableStateOf(Rect.Zero) }
+        var dragAreaOrigin by remember { mutableStateOf(Offset.Zero) }
+        // Read through a snapshot so the gesture loop below, which is started
+        // once and never restarted, still sees the current value.
+        val sleeveExpanded by rememberUpdatedState(p < 0.5f)
 
         Column(
             modifier = Modifier
@@ -840,8 +905,28 @@ fun NowPlayingScreen(
                     // on purpose: inside it, the two gutters were left as bare
                     // sheet, and a swipe that strayed into one closed the whole
                     // player instead of scrolling the lyrics or the queue.
+                    .onGloballyPositioned { dragAreaOrigin = it.positionInRoot() }
                     .pointerInput(Unit) {
-                        detectVerticalDragGestures { change, _ -> change.consume() }
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            // A gesture that starts on the expanded sleeve is
+                            // left entirely alone, so the sheet reads it exactly
+                            // as it reads one that starts on the handle — same
+                            // follow, same threshold, same snap back. Collapsed,
+                            // the sleeve is a thumbnail sitting over the queue
+                            // and is not a dismiss affordance, so the hole
+                            // closes with it.
+                            if (sleeveExpanded &&
+                                sleeveBounds.contains(down.position + dragAreaOrigin)
+                            ) {
+                                return@awaitEachGesture
+                            }
+                            // Otherwise: what the blanket consumer always did.
+                            val drag = awaitVerticalTouchSlopOrCancellation(down.id) { change, _ ->
+                                change.consume()
+                            } ?: return@awaitEachGesture
+                            verticalDrag(drag.id) { it.consume() }
+                        }
                     }
                     .padding(horizontal = PLAYER_GUTTER),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -905,8 +990,14 @@ fun NowPlayingScreen(
                 // it too.
                 Box(
                     modifier = Modifier
-                        .offset(x = artStart, y = artTop)
+                        // The lambda overload deliberately: the Dp one reads
+                        // its arguments at composition, so an animated offset
+                        // recomposes and re-measures this Box — cover, clip and
+                        // all — once per frame. Read at placement instead, the
+                        // same movement costs a placement pass.
+                        .offset { IntOffset(artStart.roundToPx(), artTop.roundToPx()) }
                         .size(artSize)
+                        .onGloballyPositioned { sleeveBounds = it.boundsInRoot() }
                         .graphicsLayer {
                             // The paused shrink and the swipe nudge only make
                             // sense on the full sleeve.
@@ -1517,9 +1608,19 @@ fun NowPlayingScreen(
 @Composable
 private fun rememberLyricClock(positionMs: Long, isPlaying: Boolean): MutableLongState {
     val clock = remember { mutableLongStateOf(positionMs) }
-    LaunchedEffect(positionMs, isPlaying) {
+    // Gated on the app being on screen. The loop asks for a frame, writes a
+    // value that invalidates a drawing, and is handed the next frame for it —
+    // which is a request to render continuously for as long as it runs. That is
+    // the right trade for a lyric being read and the wrong one for a phone in a
+    // pocket, and the composition alone cannot tell the two apart.
+    //
+    // Resuming needs no catch-up: [positionMs] is a key, so coming back
+    // restarts the effect and the clock is set from the player's own position
+    // before the first frame is asked for.
+    val foreground = rememberIsForeground()
+    LaunchedEffect(positionMs, isPlaying, foreground) {
         clock.longValue = positionMs
-        if (!isPlaying) return@LaunchedEffect
+        if (!isPlaying || !foreground) return@LaunchedEffect
         var previousFrame = withFrameMillis { it }
         while (true) {
             withFrameMillis { frame ->

@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -82,6 +85,7 @@ import com.music.bitchord.ui.components.PAGE_GUTTER
 import com.music.bitchord.ui.components.ROW_DIVIDER_INSET
 import com.music.bitchord.ui.components.SHELF_CARD_WIDTH
 import com.music.bitchord.ui.components.SongRow
+import com.music.bitchord.ui.components.ArtworkEdgeExtension
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.components.detailSkeleton
 import com.music.bitchord.ui.icons.BitChordIcons
@@ -138,8 +142,8 @@ private val HEADER_DROP = 44.dp
  * that have been made to *resemble* each other, and the eye finds that edge
  * every time. A single blur that samples across the join has no edge to find:
  * the picture, the colour under it and the colour under the song rows are all
- * one smear of the same glass. It is the same thing [BottomFadeBlur] does to
- * the foot of the screen, pointed at the middle of this one.
+ * one smear of the same glass. It is the same thing [TopFadeBlur] does to the
+ * head of the screen, pointed at the middle of this one.
  */
 @Composable
 fun DetailScreen(
@@ -196,6 +200,21 @@ fun DetailScreen(
     // the screen's, so the ratio decides it and both can work it out alone.
     val artHeight = LocalConfiguration.current.screenWidthDp.dp /
         if (isArtist) ARTIST_PHOTO_RATIO else SLEEVE_RATIO
+    /**
+     * Where the picture starts.
+     *
+     * It used to be the very top of the screen, which put the sleeve's first
+     * inch behind the clock and the signal bars. The blur and its scrim keep
+     * the bar's own glyphs readable over that, but they do nothing for the
+     * artwork underneath — a face or a title landing in that strip is simply
+     * covered by the system's. Starting below the inset gives the picture back
+     * its whole frame; the wash fills the strip above it, so the page still
+     * runs to the top of the screen.
+     *
+     * It scrolls away as it always did — this is where the art *rests*, not a
+     * band it is confined to.
+     */
+    val artTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(modifier.fillMaxSize()) {
         PageBackground(
@@ -203,6 +222,7 @@ fun DetailScreen(
             palette = palette,
             canvas = canvas,
             artHeight = artHeight,
+            artTop = artTop,
             listState = listState,
             hazeState = pageHaze,
             modifier = Modifier.matchParentSize(),
@@ -211,6 +231,7 @@ fun DetailScreen(
         MergeBand(
             palette = palette,
             artHeight = artHeight,
+            artTop = artTop,
             listState = listState,
             hazeState = pageHaze,
         )
@@ -224,12 +245,18 @@ fun DetailScreen(
         ) {
             item(key = "header") {
                 if (isArtist) {
-                    ArtistHeader(page = page, palette = palette, artHeight = artHeight)
+                    ArtistHeader(
+                        page = page,
+                        palette = palette,
+                        artHeight = artHeight,
+                        artTop = artTop,
+                    )
                 } else {
                     ReleaseHeader(
                         page = page,
                         palette = palette,
                         artHeight = artHeight,
+                        artTop = artTop,
                         trackCount = songs.size,
                         songs = songs,
                         onPlay = { onSongClick(songs, 0) },
@@ -373,6 +400,7 @@ private fun ReleaseHeader(
     page: DetailPage,
     palette: ArtworkPalette,
     artHeight: Dp,
+    artTop: Dp,
     trackCount: Int,
     songs: List<Song>,
     onPlay: () -> Unit,
@@ -391,7 +419,7 @@ private fun ReleaseHeader(
     // an aspect ratio here so the action buttons can extend below the artwork.
     Box(Modifier.fillMaxWidth()) {
 
-        Spacer(Modifier.fillMaxWidth().height(artHeight + HEADER_DROP))
+        Spacer(Modifier.fillMaxWidth().height(artTop + artHeight + HEADER_DROP))
 
         // Text + action row stacked, pinned to the bottom of the Box.
         Column(
@@ -509,9 +537,14 @@ private fun ReleaseHeader(
  * drawing behind this. See [ReleaseHeader] for why the picture isn't here.
  */
 @Composable
-private fun ArtistHeader(page: DetailPage, palette: ArtworkPalette, artHeight: Dp) {
+private fun ArtistHeader(
+    page: DetailPage,
+    palette: ArtworkPalette,
+    artHeight: Dp,
+    artTop: Dp,
+) {
     Box(Modifier.fillMaxWidth()) {
-        Spacer(Modifier.fillMaxWidth().height(artHeight + HEADER_DROP))
+        Spacer(Modifier.fillMaxWidth().height(artTop + artHeight + HEADER_DROP))
         Text(
             text = page.title,
             style = MaterialTheme.typography.displayLarge,
@@ -547,6 +580,7 @@ private fun PageBackground(
     palette: ArtworkPalette,
     canvas: CanvasArtwork?,
     artHeight: Dp,
+    artTop: Dp,
     listState: LazyListState,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
@@ -562,7 +596,12 @@ private fun PageBackground(
             Modifier
                 .fillMaxWidth()
                 .height(artHeight)
-                .offset { IntOffset(0, listState.headerTop(artHeight.toPx()).roundToInt()) },
+                .offset {
+                    IntOffset(
+                        0,
+                        (artTop.toPx() + listState.headerTop(artHeight.toPx())).roundToInt(),
+                    )
+                },
         ) {
             AsyncImage(
                 model = page.thumbnailUrl.artworkAt(HEADER_ART_PX),
@@ -618,6 +657,17 @@ private fun PageBackground(
                     ),
             )
         }
+
+        // Drawn after the picture, not before it: the last stretch of this is
+        // a crossfade onto that picture — see [ArtworkEdgeExtension]. Offset by
+        // the list's scroll alone, where the picture adds [artTop] to it.
+        ArtworkEdgeExtension(
+            model = page.thumbnailUrl.artworkAt(HEADER_ART_PX),
+            height = artTop,
+            modifier = Modifier.offset {
+                IntOffset(0, listState.headerTop(artHeight.toPx()).roundToInt())
+            },
+        )
     }
 }
 
@@ -642,6 +692,7 @@ private fun PageBackground(
 private fun MergeBand(
     palette: ArtworkPalette,
     artHeight: Dp,
+    artTop: Dp,
     listState: LazyListState,
     hazeState: HazeState,
 ) {
@@ -664,7 +715,7 @@ private fun MergeBand(
                 IntOffset(
                     x = 0,
                     y = (
-                        listState.headerTop(artHeight.toPx()) +
+                        artTop.toPx() + listState.headerTop(artHeight.toPx()) +
                             artHeight.toPx() - MERGE_BAND.toPx() / 2f
                         ).roundToInt(),
                 )

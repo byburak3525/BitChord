@@ -34,6 +34,12 @@ android {
     namespace = "com.music.bitchord"
     compileSdk = 36
 
+    // Pinned rather than left to AGP's default: AGP 8.10.1 asks for 27.0.12077973,
+    // and when that is absent it half-downloads it and fails configuration with
+    // CXX1101. Naming the NDK the SDK Manager actually installed keeps the native
+    // analyzer build reproducible across machines.
+    ndkVersion = "30.0.16138531"
+
     defaultConfig {
         applicationId = "com.music.bitchord"
         // 26 keeps reach wide; real-time blur (RenderEffect) kicks in on API 31+,
