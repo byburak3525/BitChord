@@ -56,14 +56,14 @@ private val GLYPH_SLOT = 48.dp
 /**
  * The play and skip glyphs themselves.
  *
- * Left at 32 while the slot around it grew to 48, so the glyph keeps its weight
- * and the extra 8dp goes where it was wanted — into the margin a thumb lands
- * in rather than into the mark it aims at.
+ * 36 in a 48dp slot, so the glyph carries the bar and still keeps 6dp of margin
+ * on every side of its target. Growing it costs no height: the slot is what the
+ * row is measured by, and that is unchanged.
  */
-private val GLYPH_SIZE = 32.dp
+private val GLYPH_SIZE = 36.dp
 
 /** The spinner that stands in for the play glyph, kept in proportion to it. */
-private val SPINNER_SIZE = 22.dp
+private val SPINNER_SIZE = 24.dp
 
 /**
  * The gap between the two transport controls.
