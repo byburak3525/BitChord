@@ -81,13 +81,20 @@ private val TRANSPORT_GAP = 8.dp
 
 /**
  * Vertical padding. With the 48dp touch targets — the tallest thing in the row
- * — it sets the bar's height at 60dp and so its pill radius at 30.
+ * — it sets the bar's height at 56dp and so its pill radius at 28.
  *
- * Trimmed from 8 to claw back most of what the 48dp target cost: the bar went
- * 56 to 64 and read as heavy, and this is the half of that height nothing is
- * being measured against. The targets keep their 48.
+ * All of what the 48dp target cost is clawed back now: the bar is the 56 it was
+ * before the target grew, but the target is 48 instead of 40 and the glyph 36
+ * instead of 28. This is the only height in the row nothing is measured
+ * against, which is why it is the only place the trimming could come from.
+ *
+ * It is also the floor. Below this the row's contents would have to give up
+ * height themselves, and the tallest of them is the touch target — the one
+ * thing here worth keeping at its size. Shrinking the artwork buys nothing: at
+ * 40dp it is already shorter than the slot beside it and sets no part of the
+ * bar's height.
  */
-private val ROW_PADDING_VERTICAL = 6.dp
+private val ROW_PADDING_VERTICAL = 4.dp
 
 /**
  * Horizontal padding, larger than the vertical.
@@ -98,8 +105,8 @@ private val ROW_PADDING_VERTICAL = 6.dp
  *
  * 16 rather than the 12 it was: the artwork sat closer to the left curve than
  * it wanted to. There is room for it — the 40dp artwork is centred in a 48dp
- * row now, so it starts 10dp down, and at that depth a 30dp radius has already
- * fallen back to 7.6dp from the edge. Both ends take it, so the skip glyph
+ * row, so it starts 8dp down, and at that depth a 28dp radius has already
+ * fallen back to 8.4dp from the edge. Both ends take it, so the skip glyph
  * clears the right curve by the same margin.
  */
 private val ROW_PADDING_HORIZONTAL = 16.dp
